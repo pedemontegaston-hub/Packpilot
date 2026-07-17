@@ -74,11 +74,15 @@ button,input,select{font:inherit}button{cursor:pointer}.app{width:min(100%,540px
 .saved-bag-card{display:flex;justify-content:space-between;gap:12px;align-items:center}
 .saved-bag-main{display:flex;align-items:center;gap:11px}
 .danger-link{color:var(--danger);background:#fff0f0}
+
+.calendar-note{background:#eef7ff;border:1px solid #cfe5ff;border-radius:16px;padding:12px;margin-bottom:12px}
+.pending-alert{background:#fff6e7;border:1px solid #f2d49a;border-radius:16px;padding:12px;margin-bottom:12px}
+.bag-select-row{display:grid;grid-template-columns:auto 42px 1fr auto;gap:10px;align-items:center}
 </style>
 </head>
 <body>
 <div class="app">
-<header class="hero"><div class="brand"><div class="logo">🧳</div><div><h1>PackPilot</h1><small>Organizá, pesá y viajá tranquilo. · V6.3</small></div><button class="btn btn-secondary" style="margin-left:auto;padding:9px 11px" onclick="showScreen('premium')">👑</button></div></header>
+<header class="hero"><div class="brand"><div class="logo">🧳</div><div><h1>PackPilot</h1><small>Organizá, pesá y viajá tranquilo. · V6.4</small></div><button class="btn btn-secondary" style="margin-left:auto;padding:9px 11px" onclick="showScreen('premium')">👑</button></div></header>
 <main>
 <section id="home" class="screen active">
   <div class="section-title"><div><h2>Mis viajes</h2><p>Creá un viaje y prepará todo desde un solo lugar.</p></div><button class="btn btn-primary" onclick="openModal('tripModal')">＋</button></div>
@@ -126,13 +130,20 @@ button,input,select{font:inherit}button{cursor:pointer}.app{width:min(100%,540px
 </div>
 </div>
   <div class="tabs">
-    <button class="tab-btn active" onclick="tripTab('summary',this)">Resumen</button>
-    <button class="tab-btn" onclick="tripTab('tripPeople',this)">Viajeros</button>
+    <button class="tab-btn active" onclick="tripTab('tripPeople',this)">Viajeros</button>
     <button class="tab-btn" onclick="tripTab('bags',this)">Equipaje</button>
     <button class="tab-btn" onclick="tripTab('tasks',this)">Antes de salir</button>
+    <button class="tab-btn" onclick="tripTab('summary',this)">Resumen</button>
+  </div>
+  <div id="tripPendingAlert"></div>
+  <div class="calendar-note">
+    <div class="trip-card">
+      <div><b>Agenda y recordatorios</b><div class="meta">Podés volver a descargar el evento o activar avisos de pendientes.</div></div>
+      <div style="display:flex;gap:7px"><button class="btn btn-secondary" onclick="addCurrentTripToCalendar()">📅 Agenda</button><button class="btn btn-secondary" onclick="toggleCurrentTripAlerts()">🔔</button></div>
+    </div>
   </div>
 
-  <div id="summary" class="tab-pane active">
+  <div id="summary" class="tab-pane">
     <div id="exportSummaryArea">
     <div class="summary-grid"><div class="summary-mini"><b id="packedCount">0/0</b><span>Artículos preparados</span></div><div class="summary-mini"><b id="taskCount">0/0</b><span>Tareas completadas</span></div></div>
     <div class="card" style="margin-top:10px"><div class="summary-num" id="totalTripWeight">0 kg</div><div class="meta">Peso estimado total</div></div>
@@ -146,16 +157,15 @@ button,input,select{font:inherit}button{cursor:pointer}.app{width:min(100%,540px
     </div>
   </div>
 
-  <div id="tripPeople" class="tab-pane"><div class="card"><h3 style="margin-top:0">¿Quiénes viajan?</h3><div id="tripTravelerSelector"></div></div></div>
+  <div id="tripPeople" class="tab-pane active"><div class="card"><h3 style="margin-top:0">¿Quiénes viajan?</h3><div id="tripTravelerSelector"></div></div></div>
 
   <div id="bags" class="tab-pane">
-    <div class="section-title"><div><h2>Valijas y bolsos</h2><p>Primero creá o seleccioná el equipaje que vas a usar.</p></div><button class="btn btn-primary" onclick="openModal('bagModal')">＋</button></div>
+    <div class="section-title"><div><h2>Equipaje del viaje</h2><p>Tildá únicamente las valijas o bolsos que vas a usar. Se administran desde la sección Equipajes.</p></div></div>
     <div class="card">
-      <h3 style="margin-top:0">Usar equipaje frecuente</h3>
+      <h3 style="margin-top:0">Elegir equipajes frecuentes</h3>
       <div id="savedBagSelector"></div>
     </div>
     <div id="bagList"></div>
-    <div class="card"><h3 style="margin-top:0">Carga rápida por persona</h3><p class="meta">Una vez creada la valija, elegí viajero y equipaje para cargar varias prendas.</p><button class="btn btn-primary btn-block" onclick="openQuickLoad()">Abrir carga rápida</button></div>
   </div>
 
   <div id="tasks" class="tab-pane"><div class="card"><h3 style="margin-top:0">Checklist “Antes de salir”</h3><div id="taskList"></div><button class="btn btn-secondary btn-block" style="margin-top:11px" onclick="openModal('taskModal')">＋ Tarea personalizada</button></div></div>
@@ -171,6 +181,11 @@ button,input,select{font:inherit}button{cursor:pointer}.app{width:min(100%,540px
 <section id="bagDetail" class="screen">
   <div class="section-title"><div><h2 id="bagTitle"></h2><p id="bagMeta"></p></div><button class="btn btn-secondary" onclick="showScreen('tripDetail')">Volver</button></div>
   <div class="card"><div class="summary-num" id="bagWeight"></div><div id="bagRemaining" class="meta"></div><div class="progress"><div id="bagBar"></div></div></div>
+  <div class="card">
+    <h3 style="margin-top:0">Carga rápida</h3>
+    <p class="meta">Agregá varias prendas o artículos directamente a esta valija.</p>
+    <button class="btn btn-primary btn-block" onclick="openQuickLoadForBag(currentBag)">Abrir carga rápida</button>
+  </div>
   <div class="card">
     <h3 style="margin-top:0">Buscar artículo inteligente</h3>
     <p class="meta">Probá con “inflador Xiaomi”, “secador de viaje”, “GoPro” o “termo Stanley”.</p>
@@ -200,10 +215,11 @@ button,input,select{font:inherit}button{cursor:pointer}.app{width:min(100%,540px
 <div id="tripModal" class="modal"><div class="sheet"><div class="sheet-head"><h3>Nuevo viaje</h3><button class="close" onclick="closeModal('tripModal')">×</button></div>
 <div class="field"><label>Nombre</label><input id="tripName" placeholder="Ej.: Vacaciones en Bariloche"></div>
 <div class="field"><label>Destino</label><input id="tripDestination"></div>
-<div class="grid2"><div class="field"><label>Fecha</label><input id="tripDate" type="date"></div><div class="field"><label>Días</label><input id="tripDays" type="number" value="7" min="1"></div></div>
+<div class="grid2"><div class="field"><label>Fecha desde</label><input id="tripStartDate" type="date"></div><div class="field"><label>Fecha hasta</label><input id="tripEndDate" type="date"></div></div>
 <div class="field"><label>Tipo</label><select id="tripType"><option>Playa</option><option>Ciudad</option><option>Nieve</option><option>Trabajo</option><option>Aventura</option><option>Otro</option></select></div>
 <div class="switchline"><div><b>Usar equipaje sugerido</b><div class="meta">Prioriza artículos según el tipo de viaje.</div></div><input id="suggestPacking" type="checkbox" checked></div>
 <div class="switchline"><div><b>Usar checklist antes de salir</b><div class="meta">Agrega controles predeterminados.</div></div><input id="suggestTasks" type="checkbox" checked></div>
+<div class="switchline"><div><b>Alertar si quedan pendientes</b><div class="meta">Al abrir la app, avisa si faltan artículos o tareas cerca del viaje.</div></div><input id="tripAlerts" type="checkbox" checked></div>
 <button class="btn btn-primary btn-block" onclick="createTrip()">Crear viaje</button></div></div>
 
 <div id="travelerModal" class="modal"><div class="sheet"><input id="travelerEditId" type="hidden"><div class="sheet-head"><h3 id="travelerModalTitle">Nuevo viajero frecuente</h3><button class="close" onclick="closeModal('travelerModal')">×</button></div>
@@ -519,14 +535,26 @@ function renderSavedBags(){
 }
 function addSavedBagToTrip(id){
   let s=state.savedBags.find(x=>x.id===id);if(!s)return;
+  if(state.bags.some(b=>b.tripId===currentTrip&&b.savedBagId===id))return;
   state.bags.push({id:uid('b'),tripId:currentTrip,name:s.name,type:s.type,icon:s.icon,limit:s.limit,empty:s.empty,savedBagId:s.id});
   save();renderTrip();toast('Equipaje agregado al viaje');
 }
 function renderSavedBagSelector(){
-  let e=$('savedBagSelector');
-  if(!e)return;
-  if(!state.savedBags.length){e.innerHTML='<div class="meta">No hay equipajes frecuentes guardados.</div>';return;}
-  e.innerHTML=state.savedBags.map(b=>`<div class="row"><span>${b.icon||'🧳'}</span><div><b>${esc(b.name)}</b><div class="meta">${bagTypes[b.type]?.name||''}</div></div><button class="btn btn-secondary" onclick="addSavedBagToTrip('${b.id}')">Agregar</button></div>`).join('');
+  let e=$('savedBagSelector');if(!e)return;
+  if(!state.savedBags.length){e.innerHTML='<div class="empty">Primero cargá tus valijas en la sección Equipajes.</div>';return;}
+  const active=state.bags.filter(b=>b.tripId===currentTrip&&b.savedBagId).map(b=>b.savedBagId);
+  e.innerHTML=state.savedBags.map(b=>`<label class="row bag-select-row"><input class="check" type="checkbox" ${active.includes(b.id)?'checked':''} onchange="toggleSavedBagForTrip('${b.id}',this.checked)"><span style="font-size:31px">${b.icon||'🧳'}</span><div><b>${esc(b.name)}</b><div class="meta">${bagTypes[b.type]?.name||''} · ${b.empty} kg vacía · límite ${b.limit} kg</div></div><span class="badge">${active.includes(b.id)?'Seleccionada':'Disponible'}</span></label>`).join('');
+}
+function toggleSavedBagForTrip(savedId,on){
+  const existing=state.bags.find(b=>b.tripId===currentTrip&&b.savedBagId===savedId);
+  if(on&&!existing){addSavedBagToTrip(savedId);return}
+  if(!on&&existing){
+    const hasItems=state.items.some(i=>i.bagId===existing.id);
+    if(hasItems&&!confirm('Esta valija tiene artículos cargados. ¿Quitarla del viaje y eliminar su contenido?')){renderTrip();return}
+    state.items=state.items.filter(i=>i.bagId!==existing.id);
+    state.bags=state.bags.filter(b=>b.id!==existing.id);
+    save();renderTrip();toast('Equipaje quitado del viaje');
+  }
 }
 function deleteCurrentTrip(){
   let t=state.trips.find(x=>x.id===currentTrip);if(!t)return;
@@ -540,8 +568,107 @@ function deleteCurrentTrip(){
   currentTrip=null;save();showScreen('home');toast('Viaje eliminado');
 }
 
-function createTrip(){let name=$('tripName').value.trim();if(!name)return toast('Ingresá un nombre');let t={id:uid('t'),name,destination:$('tripDestination').value.trim(),date:$('tripDate').value,days:+$('tripDays').value||1,type:$('tripType').value,suggestPacking:$('suggestPacking').checked,suggestTasks:$('suggestTasks').checked};state.trips.push(t);if(t.suggestTasks)baseTasks.concat(state.frequentTasks).forEach(a=>state.tasks.push({id:uid('task'),tripId:t.id,text:a[0]||a.text,category:a[1]||a.category,done:false,custom:false}));save();closeModal('tripModal');renderTrips();toast('Viaje creado')}
-function renderTrips(){let e=$('tripList');if(!state.trips.length){e.innerHTML='<div class="card empty">Creá el primer viaje para comenzar la prueba.</div>';return}e.innerHTML=state.trips.map(t=>{let v=tripTypeVisuals[t.type]||tripTypeVisuals.Otro;return`<div class="card trip-card" onclick="openTrip('${t.id}')"><div class="trip-card-visual"><div class="trip-visual ${v.className}">${v.emoji}</div><div><div class="trip-title">${esc(t.name)}</div><div class="meta">${esc(t.destination||'Sin destino')} · ${t.days} días</div><div class="meta">Peso total: <b>${kg(tripTotal(t.id))}</b></div></div></div><span class="pill">${esc(t.type)}</span></div>`}).join('')}
+
+function parseLocalDate(value){
+  if(!value)return null;
+  const [y,m,d]=value.split('-').map(Number);
+  return new Date(y,m-1,d);
+}
+function formatDate(value){
+  const d=parseLocalDate(value);return d?d.toLocaleDateString('es-AR'):'Sin fecha';
+}
+function tripDaysBetween(start,end){
+  const a=parseLocalDate(start),b=parseLocalDate(end);
+  if(!a||!b)return 1;
+  return Math.max(1,Math.round((b-a)/86400000)+1);
+}
+function migrateTripDates(t){
+  if(!t.startDate&&t.date)t.startDate=t.date;
+  if(!t.endDate&&t.startDate){
+    const d=parseLocalDate(t.startDate);
+    d.setDate(d.getDate()+Math.max(0,(+t.days||1)-1));
+    t.endDate=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  t.days=tripDaysBetween(t.startDate,t.endDate);
+  if(typeof t.alertsEnabled==='undefined')t.alertsEnabled=false;
+  return t;
+}
+state.trips.forEach(migrateTripDates);
+save();
+
+function calendarDate(value,addDay=false){
+  const d=parseLocalDate(value);if(!d)return '';
+  if(addDay)d.setDate(d.getDate()+1);
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+}
+function downloadTripCalendar(t){
+  if(!t?.startDate||!t?.endDate)return toast('Completá las fechas del viaje');
+  const desc=`Viaje ${t.name}. Preparación gestionada con PackPilot.`;
+  const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//PackPilot//ES','CALSCALE:GREGORIAN','BEGIN:VEVENT',
+    `UID:${t.id}@packpilot`,`DTSTAMP:${new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z/,'Z')}`,
+    `DTSTART;VALUE=DATE:${calendarDate(t.startDate)}`,`DTEND;VALUE=DATE:${calendarDate(t.endDate,true)}`,
+    `SUMMARY:${String(t.name).replace(/[,;]/g,' ')}`,`LOCATION:${String(t.destination||'').replace(/[,;]/g,' ')}`,
+    `DESCRIPTION:${desc}`,'END:VEVENT','END:VCALENDAR'].join('\r\n');
+  const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=`${t.name.replace(/[^a-z0-9áéíóúñ]+/gi,'_')}.ics`;a.click();URL.revokeObjectURL(url);
+  toast('Evento listo para abrir en tu agenda');
+}
+function addCurrentTripToCalendar(){downloadTripCalendar(state.trips.find(t=>t.id===currentTrip))}
+async function requestNotifications(){
+  if(!('Notification' in window))return false;
+  if(Notification.permission==='granted')return true;
+  if(Notification.permission!=='denied')return (await Notification.requestPermission())==='granted';
+  return false;
+}
+async function toggleCurrentTripAlerts(){
+  const t=state.trips.find(x=>x.id===currentTrip);if(!t)return;
+  t.alertsEnabled=!t.alertsEnabled;
+  if(t.alertsEnabled)await requestNotifications();
+  save();renderTrip();toast(t.alertsEnabled?'Alertas activadas':'Alertas desactivadas');
+}
+function tripPending(t){
+  const bags=state.bags.filter(b=>b.tripId===t.id),ids=bags.map(b=>b.id);
+  const items=state.items.filter(i=>ids.includes(i.bagId));
+  const tasks=state.tasks.filter(x=>x.tripId===t.id);
+  return {items:items.filter(i=>!i.packed).length,totalItems:items.length,tasks:tasks.filter(x=>!x.done).length,totalTasks:tasks.length};
+}
+function renderTripPendingAlert(){
+  const e=$('tripPendingAlert'),t=state.trips.find(x=>x.id===currentTrip);if(!e||!t)return;
+  const p=tripPending(t),pending=p.items+p.tasks;
+  if(!pending){e.innerHTML='<div class="calendar-note"><b>✓ Preparación completa</b><div class="meta">No quedan artículos ni tareas pendientes.</div></div>';return;}
+  e.innerHTML=`<div class="pending-alert"><b>⚠ Quedan pendientes</b><div class="meta">${p.items} artículos sin preparar y ${p.tasks} tareas sin completar. Alertas ${t.alertsEnabled?'activadas':'desactivadas'}.</div></div>`;
+}
+function checkTripAlerts(){
+  if(document.visibilityState!=='visible')return;
+  state.trips.filter(t=>t.alertsEnabled&&t.startDate).forEach(t=>{
+    const days=Math.ceil((parseLocalDate(t.startDate)-new Date())/86400000),p=tripPending(t);
+    if(days<=7&&days>=0&&(p.items+p.tasks)>0){
+      const key=`alert_${t.id}_${new Date().toISOString().slice(0,10)}`;
+      if(!sessionStorage.getItem(key)){
+        sessionStorage.setItem(key,'1');
+        if('Notification' in window&&Notification.permission==='granted')new Notification(`PackPilot: ${t.name}`,{body:`Quedan ${p.items} artículos y ${p.tasks} tareas pendientes.`});
+      }
+    }
+  });
+}
+document.addEventListener('visibilitychange',checkTripAlerts);
+
+async function createTrip(){
+  let name=$('tripName').value.trim(),startDate=$('tripStartDate').value,endDate=$('tripEndDate').value;
+  if(!name)return toast('Ingresá un nombre');
+  if(!startDate||!endDate)return toast('Completá fecha desde y fecha hasta');
+  if(parseLocalDate(endDate)<parseLocalDate(startDate))return toast('La fecha hasta debe ser posterior');
+  let t={id:uid('t'),name,destination:$('tripDestination').value.trim(),startDate,endDate,
+    days:tripDaysBetween(startDate,endDate),type:$('tripType').value,suggestPacking:$('suggestPacking').checked,
+    suggestTasks:$('suggestTasks').checked,alertsEnabled:$('tripAlerts').checked};
+  state.trips.push(t);
+  if(t.suggestTasks)baseTasks.concat(state.frequentTasks).forEach(a=>state.tasks.push({id:uid('task'),tripId:t.id,text:a[0]||a.text,category:a[1]||a.category,done:false,custom:false}));
+  save();closeModal('tripModal');renderTrips();toast('Viaje creado');
+  if(t.alertsEnabled)await requestNotifications();
+  if(confirm('¿Querés guardar este viaje en tu agenda?'))downloadTripCalendar(t);
+}
+function renderTrips(){let e=$('tripList');if(!state.trips.length){e.innerHTML='<div class="card empty">Creá el primer viaje para comenzar la prueba.</div>';return}e.innerHTML=state.trips.map(t=>{let v=tripTypeVisuals[t.type]||tripTypeVisuals.Otro;return`<div class="card trip-card" onclick="openTrip('${t.id}')"><div class="trip-card-visual"><div class="trip-visual ${v.className}">${v.emoji}</div><div><div class="trip-title">${esc(t.name)}</div><div class="meta">${esc(t.destination||'Sin destino')} · ${formatDate(t.startDate)} al ${formatDate(t.endDate)}</div><div class="meta">Peso total: <b>${kg(tripTotal(t.id))}</b></div></div></div><span class="pill">${esc(t.type)}</span></div>`}).join('')}
 function openTrip(id){currentTrip=id;showScreen('tripDetail')}
 
 function toggleTripTraveler(id,on){let ex=state.tripTravelers.some(x=>x.tripId===currentTrip&&x.travelerId===id);if(on&&!ex)state.tripTravelers.push({tripId:currentTrip,travelerId:id});if(!on&&ex)state.tripTravelers=state.tripTravelers.filter(x=>!(x.tripId===currentTrip&&x.travelerId===id));save();renderTrip()}
@@ -562,11 +689,12 @@ function createBag(){
 }
 function openBag(id){currentBag=id;showScreen('bagDetail')}
 
-function renderTrip(){let t=state.trips.find(x=>x.id===currentTrip);if(!t)return;renderSavedBagSelector();$('detailTitle').textContent=t.name;$('detailMeta').textContent=`${t.destination||'Sin destino'} · ${t.days} días · ${t.type}`;$('totalTripWeight').textContent=kg(tripTotal(t.id));renderTripPeople();renderTripBags();renderTasks();renderSummary()}
+function renderTrip(){let t=state.trips.find(x=>x.id===currentTrip);if(!t)return;renderSavedBagSelector();$('detailTitle').textContent=t.name;$('detailMeta').textContent=`${t.destination||'Sin destino'} · ${formatDate(t.startDate)} al ${formatDate(t.endDate)} · ${t.type}`;$('totalTripWeight').textContent=kg(tripTotal(t.id));renderTripPeople();renderTripBags();renderTasks();renderSummary();renderTripPendingAlert();checkTripAlerts()}
 function renderTripPeople(){let ids=state.tripTravelers.filter(x=>x.tripId===currentTrip).map(x=>x.travelerId);$('tripTravelerSelector').innerHTML=state.travelers.length?state.travelers.map(t=>`<label class="row" style="grid-template-columns:1fr auto"><div style="display:flex;gap:9px;align-items:center"><div class="avatar-preview" style="width:38px;height:38px;font-size:20px">${t.photo?`<img src="${t.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:esc(t.avatar||'👤')}</div><div><b>${esc(t.name)}</b><div class="meta">Superior ${t.upper} · Inferior ${t.lower}</div></div></div><input class="check" type="checkbox" ${ids.includes(t.id)?'checked':''} onchange="toggleTripTraveler('${t.id}',this.checked)"></label>`).join(''):'<div class="empty">Cargá viajeros frecuentes desde la sección Viajeros.</div>'}
 function renderTripBags(){let bags=state.bags.filter(x=>x.tripId===currentTrip),e=$('bagList');if(!bags.length){e.innerHTML='<div class="card empty">Todavía no hay valijas o bolsos.</div>';return}e.innerHTML=bags.map(b=>{let g=bagTotal(b.id),pct=Math.min(100,g/(b.limit*1000)*100),color=g>b.limit*1000?'var(--danger)':g>b.limit*850?'var(--warn)':'var(--ok)';let def=bagTypes[b.type]||null;return`<div class="card" onclick="openBag('${b.id}')"><div class="trip-card"><div style="display:flex;gap:10px;align-items:center"><div style="font-size:34px">${b.icon||def?.icon||'🧳'}</div><div><div class="trip-title">${esc(b.name)}</div><div class="meta">${def?esc(def.name)+' · ':''}${kg(g)} de ${b.limit} kg</div></div></div><span class="badge">${g>b.limit*1000?'Excedida':'Disponible'}</span></div><div class="progress"><div style="width:${pct}%;background:${color}"></div></div></div>`}).join('')}
 
-function openQuickLoad(){let p=selectedTravelers(),b=state.bags.filter(x=>x.tripId===currentTrip);if(!p.length)return toast('Seleccioná al menos un viajero');if(!b.length)return toast('Agregá una valija');$('quickTraveler').innerHTML=p.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('');$('quickBag').innerHTML=b.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('');quickQty={};renderQuickGrid();showScreen('quickLoad')}
+function openQuickLoad(preselectedBagId=null){let p=selectedTravelers(),b=state.bags.filter(x=>x.tripId===currentTrip);if(!p.length)return toast('Seleccioná al menos un viajero');if(!b.length)return toast('Agregá una valija');$('quickTraveler').innerHTML=p.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('');$('quickBag').innerHTML=b.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('');if(preselectedBagId)$('quickBag').value=preselectedBagId;quickQty={};renderQuickGrid();showScreen('quickLoad')}
+function openQuickLoadForBag(id){openQuickLoad(id)}
 function renderQuickGrid(){let trip=state.trips.find(x=>x.id===currentTrip),names=trip?.suggestPacking?(suggestions[trip.type]||[]):[],products=[...state.products].sort((a,b)=>Number(names.includes(b.name))-Number(names.includes(a.name)));$('quickGrid').innerHTML=products.map(p=>`<div class="quick-item"><div class="quick-icon">${p.icon||'📦'}</div><div class="quick-name">${esc(p.name)}</div><div class="quick-weight">${p.weight} g base ${names.includes(p.name)?'· sugerido':''}</div><div class="qty-control"><button onclick="changeQuick('${p.id}',-1)">−</button><div id="q_${p.id}" class="qty-value">0</div><button onclick="changeQuick('${p.id}',1)">＋</button></div></div>`).join('')}
 function changeQuick(id,d){quickQty[id]=Math.max(0,(quickQty[id]||0)+d);$('q_'+id).textContent=quickQty[id]}
 function saveQuickLoad(){let travelerId=$('quickTraveler').value,bagId=$('quickBag').value,arr=Object.entries(quickQty).filter(x=>x[1]>0);if(!arr.length)return toast('Seleccioná artículos');arr.forEach(([productId,qty])=>{let ex=state.items.find(x=>x.bagId===bagId&&x.productId===productId&&x.travelerId===travelerId);if(ex)ex.qty+=qty;else state.items.push({id:uid('i'),bagId,productId,travelerId,qty,packed:false})});save();currentBag=bagId;showScreen('bagDetail');toast('Artículos agregados')}
@@ -612,7 +740,7 @@ function buildSummaryText(){
 
   let lines=[];
   lines.push(`PACKPILOT — ${trip.name}`);
-  lines.push(`${trip.destination||'Sin destino'} · ${trip.days} días · ${trip.type}`);
+  lines.push(`${trip.destination||'Sin destino'} · ${formatDate(trip.startDate)} al ${formatDate(trip.endDate)} · ${trip.type}`);
   lines.push('');
   lines.push('VIAJEROS');
   lines.push(travelers.length?travelers.map(x=>x.name).join(', '):'Sin viajeros seleccionados');
@@ -747,6 +875,6 @@ function downloadMissingSearches(){
   toast('Historial descargado');
 }
 
-renderTrips();renderTravelers();renderSavedBags();renderCatalog();applyBagTypeDefaults();
+renderTrips();renderTravelers();renderSavedBags();renderCatalog();applyBagTypeDefaults();checkTripAlerts();
 </script>
 </body></html>
